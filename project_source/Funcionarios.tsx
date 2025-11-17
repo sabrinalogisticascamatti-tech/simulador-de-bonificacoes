@@ -16,6 +16,7 @@ export default function Funcionarios() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const utils = trpc.useUtils();
@@ -39,6 +40,18 @@ export default function Funcionarios() {
     },
     onError: (error) => {
       toast.error(`Erro ao excluir: ${error.message}`);
+    }
+  });
+
+  const updateManyMutation = trpc.funcionarios.updateMany.useMutation({
+    onSuccess: () => {
+      utils.funcionarios.list.invalidate();
+      setSelectedIds([]);
+      setShowBulkEditDialog(false);
+      toast.success("Funcionários atualizados com sucesso");
+    },
+    onError: (error) => {
+      toast.error(`Erro ao atualizar: ${error.message}`);
     }
   });
 
@@ -75,16 +88,10 @@ export default function Funcionarios() {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const headers = results.meta.fields || [];
-        const rows = results.data.map((row: any) => 
-          headers.map(h => row[h] || '')
-        );
-
-        const csvContent = Papa.unparse({ fields: headers, data: rows });
+        const rows = results.data as Record<string, string>[];
 
         importMutation.mutate({
-          csvContent,
-          headers,
+          // O backend espera os dados como um array de objetos
           rows
         });
       },
@@ -103,12 +110,29 @@ export default function Funcionarios() {
       nome: formData.get('nome') as string,
       funcao: formData.get('funcao') as string,
       equipe: formData.get('equipe') as string,
-      salarioBase: Math.round(parseFloat(formData.get('salarioBase') as string) * 100),
-      horasPadraoMes: parseInt(formData.get('horasPadraoMes') as string) || 220,
-      encargosPercentuais: Math.round(parseFloat(formData.get('encargosPercentuais') as string) * 100) || 8000,
-      observacoes: formData.get('observacoes') as string || undefined,
+      salarioBase: parseFloat(formData.get('salarioBase') as string),
+      horasPadraoMes: parseInt(formData.get('horasPadraoMes') as string),
+      encargosPercentuais: parseFloat(formData.get('encargosPercentuais') as string),
+      observacoes: formData.get('observacoes') as string,
     });
   };
+
+  const handleBulkUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const funcao = formData.get('funcao') as string;
+    const equipe = formData.get('equipe') as string;
+    const encargosRaw = formData.get('encargosPercentuais') as string;
+
+    const updates: { funcao?: string; equipe?: string; encargosPercentuais?: number } = {};
+    if (funcao) updates.funcao = funcao;
+    if (equipe) updates.equipe = equipe;
+    if (encargosRaw) updates.encargosPercentuais = parseFloat(encargosRaw);
+
+    if (Object.keys(updates).length === 0) return toast.info("Nenhum campo preenchido para atualização.");
+
+    updateManyMutation.mutate({ employeeIds: selectedIds, ...updates });
+  }
 
   const filteredFuncionarios = funcionarios?.filter(f => 
     f.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -242,15 +266,58 @@ export default function Funcionarios() {
                   {funcionarios?.length || 0} funcionário(s) cadastrado(s)
                 </CardDescription>
               </div>
-              {selectedIds.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteManyMutation.mutate({ employeeIds: selectedIds })}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir {selectedIds.length} selecionado(s)
-                </Button>
+              {selectedIds.length > 0 && (                
+                <div className="flex items-center space-x-2">
+                  <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar {selectedIds.length} selecionado(s)
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Editar Funcionários em Massa</DialogTitle>
+                        <DialogDescription>
+                          Atualize a função, equipe ou encargos para os {selectedIds.length} funcionários selecionados. Deixe os campos em branco para não alterar.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleBulkUpdate}>
+                        <div className="grid gap-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="bulk-funcao">Função</Label>
+                            <Input id="bulk-funcao" name="funcao" placeholder="Nova função" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="bulk-equipe">Equipe</Label>
+                            <Input id="bulk-equipe" name="equipe" placeholder="Nova equipe" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="bulk-encargos">Encargos (%)</Label>
+                            <Input id="bulk-encargos" name="encargosPercentuais" type="number" step="0.01" placeholder="Novo percentual de encargos" />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button type="submit" disabled={updateManyMutation.isPending}>
+                            {updateManyMutation.isPending ? "Atualizando..." : "Atualizar Selecionados"}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteManyMutation.mutate({ employeeIds: selectedIds })}
+                    disabled={deleteManyMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {deleteManyMutation.isPending 
+                      ? "Excluindo..." 
+                      : `Excluir ${selectedIds.length} selecionado(s)`}
+                  </Button>
+                </div>
               )}
             </div>
             <div className="mt-4">
