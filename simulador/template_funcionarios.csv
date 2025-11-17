@@ -1,0 +1,4 @@
+employee_id,nome,funcao,equipe,salario_base,horas_padrao_mes,encargos_percentuais,observacoes
+EMP001,João Silva,Desenvolvedor,TI,5000.00,220,80,
+EMP002,Maria Santos,Analista,Financeiro,4500.00,220,80,
+EMP003,Pedro Costa,Gerente,Vendas,7000.00,220,80,

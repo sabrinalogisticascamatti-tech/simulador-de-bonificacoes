@@ -1,0 +1,4 @@
+regra_id,tipo,scope_type,scope_value,metodo,valor,ativo
+REGRA001,hora_extra,funcao,Desenvolvedor,multiplicador_hora,1.5,true
+REGRA002,premiacao,equipe,Vendas,percentual,10,true
+REGRA003,vale_alimentacao,global,*,fixo,500,true

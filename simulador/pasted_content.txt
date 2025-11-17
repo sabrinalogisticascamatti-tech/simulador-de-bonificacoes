@@ -1,0 +1,367 @@
+✅ PROMPT FINAL — IA MANUS
+Simulador Completo de Pagamentos de Bonificação Salarial com Regras Variáveis
+
+Manus, quero que você crie um sistema completo chamado “Simulador de Pagamentos de Bonificação Salarial”, com suporte total a:
+
+Importação em lote via CSV
+
+Bonificações configuráveis por função, equipe ou funcionário
+
+Regras de precedência para determinar qual bonificação aplicar
+
+Três formatos de bonificação: hora extra, premiação ou vale-alimentação
+
+Simulações independentes com registro histórico
+
+Resumo detalhado por funcionário e por equipe
+
+Exportações em PDF e Excel
+
+Uso de IA para análise, detecção de erros e geração de relatórios executivos
+
+Siga exatamente todas as instruções abaixo.
+
+🔵 1. CRIE AS TABELAS DE BASE
+Tabela: Funcionarios
+
+employee_id
+
+nome
+
+funcao
+
+equipe
+
+salario_base
+
+horas_padrao_mes
+
+encargos_percentuais
+
+observacoes
+
+Tabela: RegrasBonificacao
+
+(para regras variáveis por função / equipe / funcionário / global)
+Campos:
+
+regra_id
+
+scope_type (individual, funcao, equipe, global)
+
+scope_value (ex.: “Motorista”, “Equipe A”, employee_id ou “GLOBAL”)
+
+tipo (hora_extra, premiacao, vale_alimentacao)
+
+metodo (fixo, percentual, multiplicador_hora)
+
+valor
+
+data_inicio
+
+data_fim
+
+ativo
+
+Tabela: Simulacoes
+
+simulacao_id
+
+nome_da_simulacao
+
+tipo_bonificacao
+
+parametros_json
+
+data_criacao
+
+Tabela: ResultadosSimulacao
+
+simulacao_id
+
+employee_id
+
+bonus_value
+
+encargos_value
+
+total_cost
+
+regra_id_aplicada
+
+🔵 2. IMPORTAÇÃO DE FUNCIONÁRIOS E REGRAS VIA CSV
+
+Criar um fluxo na Manus que permita:
+
+Importar funcionários (CSV):
+
+Mapeamento automático de colunas (usando IA)
+
+Validação de:
+
+Salários
+
+Horas mensais
+
+Encargos
+
+Inclusão/atualização na tabela Funcionarios
+
+Importar Regras de Bonificação (CSV):
+
+Estrutura padrão:
+
+regra_id,scope_type,scope_value,tipo,metodo,valor,data_inicio,data_fim,ativo
+
+
+IA deve mapear colunas mesmo com cabeçalhos diferentes
+
+Validar conflitos, datas, formatos e campos obrigatórios
+
+Edição e exclusão em massa
+
+Seleção múltipla
+
+Alterar função, equipe, salário, encargos
+
+Excluir vários funcionários ou regras de uma vez
+
+🔵 3. PARÂMETROS DO SIMULADOR
+
+Criar uma tela na Manus para permitir entrada dos seguintes dados:
+
+Tipo de bonificação (hora extra, premiação, vale-alimentação)
+
+Horas extras (quando aplicável)
+
+Multiplicador de hora extra (se não houver regra específica)
+
+Valor de prêmio (fixo ou % sobre salário)
+
+Valor de vale-alimentação
+
+Toggle:
+
+Vale-alimentação integra salário? SIM / NÃO
+
+Premiação inclui encargos? SIM / NÃO
+
+🔵 4. ALGORITMO DE SELEÇÃO DE REGRA DE BONIFICAÇÃO
+
+Criar função no fluxo que determina a regra aplicável obedecendo esta precedência obrigatória:
+
+Regra individual
+
+Regra por função
+
+Regra por equipe
+
+Regra global
+
+Parâmetro informado manualmente na simulação (apenas se nenhuma regra existir)
+
+A Manus deve implementar essa lógica:
+obter_regra_aplicavel(employee_id, funcao, equipe, tipo, data_simulacao):
+
+    verificar regra individual
+    se existir → retornar
+
+    verificar regra por função
+    se existir → retornar
+
+    verificar regra por equipe
+    se existir → retornar
+
+    verificar regra global
+    se existir → retornar
+
+    retornar None  # usar valor inserido manualmente
+
+
+Registrar no resultado da simulação qual regra foi usada (regra_id_aplicada).
+
+🔵 5. CÁLCULO DA BONIFICAÇÃO POR TIPO
+A. Bonificação como Hora Extra
+
+Fórmulas a aplicar:
+
+valor_hora = salario_base / horas_padrao_mes
+multiplicador = regra.valor ou multiplicador_manual
+valor_hora_extra = valor_hora * multiplicador
+bonus_value = valor_hora_extra * horas_extra
+encargos_value = (salario_base + bonus_value) * encargos_percentuais
+total_cost = salario_base + bonus_value + encargos_value
+
+B. Bonificação como Premiação
+se metodo == "fixo":
+    bonus_value = valor
+se metodo == "percentual":
+    bonus_value = salario_base * valor
+
+
+Encargos:
+
+se incluir_encargos:
+    encargos_value = (salario_base + bonus_value) * encargos_percentuais
+senão:
+    encargos_value = salario_base * encargos_percentuais
+
+
+Total:
+
+total_cost = salario_base + bonus_value + encargos_value
+
+C. Vale-Alimentação
+
+Opção 1 – NÃO integra salário:
+
+bonus_value = valor_vale
+encargos_value = salario_base * encargos_percentuais
+total_cost = salario_base + encargos_value + valor_vale
+
+
+Opção 2 – integra salário:
+
+bonus_value = valor_vale
+encargos_value = (salario_base + bonus_value) * encargos_percentuais
+total_cost = salario_base + bonus_value + encargos_value
+
+🔵 6. RESULTADOS OBRIGATÓRIOS DA SIMULÃO
+Por funcionário:
+
+Nome
+
+Função
+
+Equipe
+
+Salário base
+
+Regras aplicadas (com ID da regra)
+
+Valor da bonificação
+
+Valor dos encargos
+
+Total da folha com bonificação
+
+Resumo por Equipe (obrigatório):
+
+Nome da equipe
+
+Lista de funções
+
+Quantidade de funcionários
+
+Total dos salários
+
+Total das bonificações
+
+Total dos encargos
+
+Coluna: Custo total da folha COM bonificação
+
+Diferença percentual vs folha original
+
+Totais gerais:
+
+Total folha original
+
+Total com bonificação
+
+Aumento em R$
+
+Aumento %
+
+🔵 7. EXPORTAÇÃO
+Exportar EXCEL (.xlsx)
+
+Com as abas:
+
+Funcionários
+
+Regras de Bonificação
+
+Parâmetros da Simulação
+
+Resultado Detalhado
+
+Resumo por Equipe
+
+Exportar PDF
+
+Com:
+
+Nome da simulação
+
+Tipo de bonificação
+
+Parâmetros utilizados
+
+Tabela consolidada por equipe
+
+Totais gerais
+
+Observações da IA
+
+🔵 8. USO DE IA MANUS NO PROCESSO
+A IA Manus deve executar automaticamente:
+
+Mapeamento de colunas dos CSVs
+
+Identificação de erros ou campos ausentes
+
+Recomendações de valores padrão para bonificação
+
+Geração de resumo executivo automático da simulação, incluindo:
+
+Principais equipes impactadas
+
+Diferença de custo entre cenários
+
+Tendências por função
+
+Comparação de regras aplicadas
+
+Comparação entre duas ou mais simulações anteriores
+
+Sugestão de ajustes nas regras de bonificação
+
+🔵 9. INTERFACE / FLUXO A SER CRIADO NA MANUS
+
+Importar Funcionários (CSV)
+
+Importar Regras de Bonificação (CSV)
+
+Gerenciar Funcionários (edição/exclusão em massa)
+
+Gerenciar Regras de Bonificação (criar/editar/ativar/desativar)
+
+Criar Simulação
+
+Processar Cálculo
+
+Visualizar Resultados
+
+Resumo por Equipe
+
+Exportar PDF / Excel
+
+Relatório Executivo (IA)
+
+🔵 10. REGRAS FINAIS IMPORTANTES
+
+Nunca sobrescrever a base original de funcionários.
+
+Toda simulação deve ser salva como cenário independente.
+
+Registrar regra_id_aplicada para cada funcionário (auditoria).
+
+Se houver conflito de regras, seguir obrigatoriamente:
+Individual > Função > Equipe > Global > Valor manual
+
+Permitir filtros por equipe e função em todos os relatórios.
+
+IA deve gerar insights sempre que uma simulação for concluída.
+
+🔚 FIM DO PROMPT — EXECUTE TODA A CONFIGURAÇÃO COMPLETA
