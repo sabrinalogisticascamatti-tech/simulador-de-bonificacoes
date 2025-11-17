@@ -157,13 +157,13 @@ export function validateFuncionarioRow(row: Record<string, string>): {
   }
 
   // Converter e validar números
-  const salarioBase = parseFloat(row.salario_base.replace(/[^\d.-]/g, ''));
+  const salarioBase = parseFloat(row.salario_base.replace(/[^\d,.-]/g, '').replace('.', '').replace(',', '.'));
   if (isNaN(salarioBase) || salarioBase <= 0) {
     errors.push("salario_base deve ser um número positivo");
   }
 
   const horasPadraoMes = row.horas_padrao_mes 
-    ? parseInt(row.horas_padrao_mes) 
+    ? parseInt(row.horas_padrao_mes.replace(/[^\d]/g, '')) 
     : 220;
   
   if (isNaN(horasPadraoMes) || horasPadraoMes <= 0) {
@@ -171,7 +171,7 @@ export function validateFuncionarioRow(row: Record<string, string>): {
   }
 
   const encargosPercentuais = row.encargos_percentuais 
-    ? parseFloat(row.encargos_percentuais.replace(/[^\d.-]/g, ''))
+    ? parseFloat(row.encargos_percentuais.replace(/[^\d,.-]/g, '').replace(',', '.'))
     : 80;
   
   if (isNaN(encargosPercentuais) || encargosPercentuais < 0) {
