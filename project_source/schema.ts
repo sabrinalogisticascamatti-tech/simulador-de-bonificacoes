@@ -29,7 +29,7 @@ export const funcionarios = mysqlTable("funcionarios", {
   equipe: varchar("equipe", { length: 255 }).notNull(),
   salarioBase: int("salario_base").notNull(), // em centavos
   horasPadraoMes: int("horas_padrao_mes").notNull().default(220),
-  encargosPercentuais: int("encargos_percentuais").notNull().default(80), // 80% = 8000 (em base 100)
+  encargosPercentuais: int("encargos_percentuais").notNull().default(8000), // 80% = 8000 (base 10000)
   observacoes: text("observacoes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
